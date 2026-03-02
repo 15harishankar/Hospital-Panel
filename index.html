@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Hospital Appointment Dashboard</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  display:flex;
+  height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:220px;
+  background:#1e2a38;
+  color:white;
+  padding:20px;
+}
+
+.sidebar h2{
+  text-align:center;
+}
+
+.sidebar button{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  background:none;
+  border:none;
+  color:white;
+  text-align:left;
+  cursor:pointer;
+  border-radius:5px;
+}
+
+.sidebar button:hover{
+  background:#34495e;
+}
+
+/* MAIN CONTENT */
+.main{
+  flex:1;
+  padding:20px;
+  background:#f4f6f9;
+  overflow:auto;
+}
+
+.section{
+  display:none;
+}
+
+.card-box{
+  display:flex;
+  gap:15px;
+  margin-bottom:20px;
+}
+
+.stat-card{
+  flex:1;
+  padding:20px;
+  background:white;
+  border-radius:8px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.2);
+  text-align:center;
+}
+
+form input, select, textarea{
+  width:100%;
+  padding:8px;
+  margin:8px 0;
+}
+
+button.submit-btn{
+  background:green;
+  color:white;
+  padding:10px;
+  border:none;
+  cursor:pointer;
+}
+
+.app-card{
+  background:white;
+  padding:15px;
+  margin:10px 0;
+  border-radius:6px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.2);
+}
+
+.status{
+  padding:3px 8px;
+  border-radius:4px;
+  color:white;
+}
+
+.pending{background:orange;}
+.confirmed{background:green;}
+.completed{background:blue;}
+.deleted{background:red;}
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+<h2>Hospital Panel</h2>
+<button onclick="showSection('dashboard')">Dashboard</button>
+<button onclick="showSection('book')">Book Appointment</button>
+<button onclick="showSection('manage')">Manage Appointments</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="section">
+<h2>Dashboard Overview</h2>
+
+<div class="card-box">
+<div class="stat-card">
+<h3 id="totalCount">0</h3>
+<p>Total Appointments</p>
+</div>
+
+<div class="stat-card">
+<h3 id="pendingCount">0</h3>
+<p>Pending</p>
+</div>
+
+<div class="stat-card">
+<h3 id="completedCount">0</h3>
+<p>Completed</p>
+</div>
+
+<div class="stat-card">
+<h3 id="deletedCount">0</h3>
+<p>Deleted</p>
+</div>
+</div>
+</div>
+
+<!-- BOOK -->
+<div id="book" class="section">
+<h2>Book Appointment</h2>
+
+<form id="appointmentForm">
+<input type="text" id="name" placeholder="Patient Name" required>
+
+<select id="hospital" onchange="loadDoctors()" required>
+<option value="">Select Hospital</option>
+<option>City Hospital</option>
+<option>Apollo Clinic</option>
+<option>Global Health Center</option>
+</select>
+
+<select id="doctor" required>
+<option value="">Select Doctor</option>
+</select>
+
+<button type="submit" class="submit-btn">Book</button>
+</form>
+</div>
+
+<!-- MANAGE -->
+<div id="manage" class="section">
+<h2>Manage Appointments</h2>
+<div id="appointmentList"></div>
+</div>
+
+</div>
+
+<script>
+
+function showSection(id){
+  document.querySelectorAll(".section")
+  .forEach(sec=>sec.style.display="none");
+  document.getElementById(id).style.display="block";
+}
+showSection("dashboard");
+
+const doctors={
+"City Hospital":["Dr. Smith","Dr. John"],
+"Apollo Clinic":["Dr. Meena","Dr. Rahul"],
+"Global Health Center":["Dr. Arjun","Dr. Anita"]
+};
+
+function loadDoctors(){
+  let hospital=document.getElementById("hospital").value;
+  let doctorSelect=document.getElementById("doctor");
+  doctorSelect.innerHTML="<option>Select Doctor</option>";
+
+  if(doctors[hospital]){
+    doctors[hospital].forEach(doc=>{
+      let option=document.createElement("option");
+      option.text=doc;
+      doctorSelect.add(option);
+    });
+  }
+}
+
+let appointments=[];
+
+document.getElementById("appointmentForm")
+.addEventListener("submit",function(e){
+  e.preventDefault();
+
+  let appointment={
+    name:document.getElementById("name").value,
+    doctor:document.getElementById("doctor").value,
+    status:"Pending"
+  };
+
+  appointments.push(appointment);
+  updateDashboard();
+  displayAppointments();
+  this.reset();
+  showSection("manage");
+});
+
+function displayAppointments(){
+
+  let list=document.getElementById("appointmentList");
+  list.innerHTML="";
+
+  appointments.forEach((app,index)=>{
+
+    let card=document.createElement("div");
+    card.className="app-card";
+
+    card.innerHTML=`
+      <strong>${app.name}</strong><br>
+      ${app.doctor}<br>
+      Status: <span class="status ${app.status.toLowerCase()}">${app.status}</span><br><br>
+      <button onclick="updateStatus(${index},'Completed')">Complete</button>
+      <button onclick="deleteAppointment(${index})">Delete</button>
+    `;
+
+    list.appendChild(card);
+  });
+}
+
+function updateStatus(index,status){
+  appointments[index].status=status;
+  updateDashboard();
+  displayAppointments();
+}
+
+function deleteAppointment(index){
+  appointments[index].status="Deleted";
+  updateDashboard();
+  displayAppointments();
+}
+
+function updateDashboard(){
+
+  document.getElementById("totalCount").innerText=appointments.length;
+  document.getElementById("pendingCount").innerText=
+    appointments.filter(a=>a.status=="Pending").length;
+  document.getElementById("completedCount").innerText=
+    appointments.filter(a=>a.status=="Completed").length;
+  document.getElementById("deletedCount").innerText=
+    appointments.filter(a=>a.status=="Deleted").length;
+}
+
+</script>
+
+</body>
+</html>
